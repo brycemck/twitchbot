@@ -9,8 +9,8 @@
     "ignore": [ "client/**" ]
   },
   "scripts": {
-    "run": "cd client && npm run build && cd .. && nodemon index.js",
-    "rundev": "nodemon index.js"
+    "start": "cd client && npm run build && cd .. && nodemon index.js",
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "dotenv": "^16.0.3",
