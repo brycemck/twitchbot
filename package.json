@@ -1,0 +1,12 @@
+{
+  "name": "twitchtest",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "author": "Bryce McKenney",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "ws": "^8.13.0"
+  }
+}
