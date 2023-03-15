@@ -13,3 +13,5 @@ TWITCH_ACCESS_TOKEN=
 also `npm install` silly
 
 `node index.js` to run for now until i get nodemon and other shizies working;sd ads a0 adad sdsdflksadjf `:)`
+
+any file you add to the sounds directory will be read and loaded in as a command, using `![filename]` as the command. i haven't tested putting anything other than an mp3 in there but it uses mplayer to play the audio file so make sure u have that silly
