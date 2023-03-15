@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Limelight&family=Roboto:wght@300;400;900&display=swap');
+
+$purple: #2f3061;
+$blue: #0e34a0;
+$lavender: #5f5980;
+$darkgrey: #343434;
+$whiteish: #dfdfdf;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  position: relative;
+  font-weight: normal;
+}
+
+body {
+  min-height: 100vh;
+  line-height: 1.6;
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  max-width: 1280px;
+  font-weight: normal;
+}
+
+h1 {
+  font-family: 'Limelight', cursive;
+  font-size: 190px;
+  color: $purple;
+  text-transform: uppercase;
+}
+
+.artist-badge {
+  background-image: url(../assets/chatbadges/artist.png);
+}
+.broadcaster-badge {
+  background-image: url(../assets/chatbadges/broadcaster.png);
+}
+.moderator-badge {
+  background-image: url(../assets/chatbadges/moderator.png);
+}
+.prime-badge {
+  background-image: url(../assets/chatbadges/prime.png);
+}
+.turbo-badge {
+  background-image: url(../assets/chatbadges/turbo.png);
+}
+.verified-badge {
+  background-image: url(../assets/chatbadges/verified.png);
+}
+.vip-badge {
+  background-image: url(../assets/chatbadges/vip.png);
+}
+.no_video-badge {
+  background-image: url(../assets/chatbadges/no_video.png);
+}
+.no_audio-badge {
+  background-image: url(../assets/chatbadges/no_audio.png);
+}
+
+.chat-content img {
+  position: relative;
+  top: 5px;
+}
+p:has(> .chat-content > img) {
+  margin-top: -3px;
+}

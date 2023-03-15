@@ -1,3 +1,5 @@
 .env
 node_modules
 sounds/*.mp3
+dist
+logs

@@ -3,6 +3,41 @@ const WebSocket = require('ws');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const chalk = require('chalk');
+
+const express = require('express');
+const app = express();
+const host = 'http://localhost';
+const port = 3000;
+
+const logsPath = path.join(__dirname, '.', 'logs');
+
+const Logger = function(msg, type) {
+  let timestamp = new Date();
+  let timedatestring = `${timestamp.toDateString()} ${timestamp.toTimeString().split(' ')[0]} ${timestamp.toTimeString().split(' ')[1]}`
+  let daystring = `${timestamp.getFullYear()}${timestamp.getMonth()}${timestamp.getDate()}`
+
+  fs.writeFile(`${logsPath}/${daystring}.txt`, `\n${type == 0 ? '[DEBUG]' : '[ERROR]'} ${timedatestring}: ${msg}`, { flag: 'a' }, function (err) {
+    if (err) throw err;
+  });
+
+  switch (type) {
+    case 0:
+      console.log(chalk.gray(timedatestring) + ': ' + chalk.green(msg))
+      break;
+    case 1:
+      console.error(chalk.gray(timedatestring) + ': ' + chalk.red(msg))
+      break;
+    default:
+  }
+}
+
+// We'll use the public directory to serve the Vue App
+app.use(express.static('dist'));
+
+app.listen(port, () => {
+ Logger(`App listening on ${host}:${port}`, 0)
+});
 
 class TwitchBot {
     constructor(twitchNick) {
@@ -14,7 +49,7 @@ class TwitchBot {
     loadSounds = () => {
         let SoundsDir = path.join(__dirname, '.', this.soundsPath);
         fs.readdir(SoundsDir, (err, files) => {
-            if (err) console.log(err);
+            if (err) Logger(err, 1);
             else
             files.forEach(async (file) => {
                 let cmd = {};
@@ -37,23 +72,23 @@ class TwitchBot {
                     })
                 }
                 this.ChatCommands.set(file.split('.')[0].toLowerCase(), cmd);
-                console.log('Sound loaded: ' + file.split('.')[0]);
+                Logger('Sound loaded: ' + file.split('.')[0], 0);
             });
         });
     }
     loadCommands = () => {
         let CommandsDir = path.join(__dirname, '.', this.commandsPath);
         fs.readdir(CommandsDir, (err, files) => {
-            if (err) console.log(err);
+            if (err) Logger(err, 1);
             else
             files.forEach(async (file) => {
                 let cmd = require(CommandsDir + '/' + file);
                 if (!cmd.name || !cmd.description || !cmd.run)
-                return console.log(
+                return Logger(
                     'Unable to load command: ' + file.split('.')[0] + '. Reason: file is missing run / name / description properties.'
-                );
+                , 1);
                 this.ChatCommands.set(file.split('.')[0].toLowerCase(), cmd);
-                console.log('Command loaded: ' + file.split('.')[0]);
+                Logger('Command loaded: ' + file.split('.')[0], 0);
             });
         });
     }
@@ -90,13 +125,13 @@ class TwitchChatConnector extends TwitchBot {
                         this.twitchWS.send('PONG ' + message.parameters);
                         break;
                     case '001': // IRC code for successful login
-                        console.log('Login successful, joining channel.')
+                        Logger('Login successful, joining channel.', 0)
                         this.twitchWS.send(`JOIN #${this.twitchNick}`);
                         this.initialize();
 
                         break;
                     case 'PART':
-                        console.error('The channel must have banned the bot.');
+                        Logger('The channel must have banned the bot.', 1);
                         this.twitchWS.close()
                         break;
                     default:
@@ -233,13 +268,13 @@ class TwitchChatConnector extends TwitchBot {
             }
             break;
           case 'RECONNECT':  
-            console.log('The Twitch IRC server is about to terminate the connection for maintenance.')
+            Logger('The Twitch IRC server is about to terminate the connection for maintenance.', 0)
             parsedCommand = {
               command: commandParts[0]
             }
             break;
           case '421':
-            console.log(`Unsupported IRC command: ${commandParts[2]}`)
+            Logger(`Unsupported IRC command: ${commandParts[2]}`, 0)
             return null;
           case '001':  // Logged in (successfully authenticated). 
             parsedCommand = {
@@ -258,7 +293,7 @@ class TwitchChatConnector extends TwitchBot {
             // console.log(`numeric message: ${commandParts[0]}`)
             return null;
           default:
-            console.log(`\nUnexpected command: ${commandParts[0]}\n`);
+            Logger(`\nUnexpected command: ${commandParts[0]}\n`, 1);
             return null;
         }
         return parsedCommand;
