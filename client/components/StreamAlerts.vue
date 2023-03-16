@@ -5,6 +5,8 @@
 </template>
 
 <script>
+import WebSocket from 'ws';
+
 // build notification class and queue
 class Notification {
   action = ''
@@ -235,7 +237,8 @@ export default {
     const that = this;
 
     // save access_token cookie
-    this.accessToken = this.$cookies.get('access_token')
+    // this.accessToken = this.$cookies.get('access_token')
+    this.accessToken = ''
 
     this.eventConnection = new WebSocket('wss://eventsub-beta.wss.twitch.tv/ws');
     this.eventConnection.onopen = function(event) {
