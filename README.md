@@ -14,4 +14,4 @@ also `npm install` silly
 
 `npm run start` builds and serves front end, `npm run dev` starts nodemon process `:)`
 
-any file you add to the sounds directory will be read and loaded in as a command, using `![filename]` as the command. i haven't tested putting anything other than an mp3 in there but it uses mplayer to play the audio file so make sure u have that silly
+any file you add to the sounds directory will be read and loaded in as a command, using `![filename]` as the command. the sound loader function only pays attention to .mp3 files. it uses mplayer to play the audio file so make sure u have that silly

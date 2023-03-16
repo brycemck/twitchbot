@@ -1,14 +1,19 @@
-require('dotenv').config()
-const WebSocket = require('ws');
-const fs = require('fs');
-const path = require('path');
-const { spawn } = require('child_process');
-const chalk = require('chalk');
+import WebSocket from 'ws';
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'url';
+import { spawn } from 'child_process';
+import chalk from 'chalk';
+import express from 'express';
+import { createServer as createViteServer } from 'vite';
+import Cookies from 'universal-cookie';
 
-const express = require('express');
-const app = express();
-const host = 'http://localhost';
-const port = 3000;
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const resolve = (p) => path.resolve(__dirname, p)
 
 const logsPath = path.join(__dirname, '.', 'logs');
 
@@ -27,20 +32,64 @@ const Logger = function(msg, type) {
   switch (type) {
     default:
     case 0:
-      console.log(chalk.gray(timedatestring) + ': ' + chalk.green(msg))
+      console.log(chalk.gray(timedatestring) + ' ' + chalk.green(msg))
       break;
     case 1:
-      console.error(chalk.gray(timedatestring) + ': ' + chalk.red(msg))
+      console.error(chalk.gray(timedatestring) + ' ' + chalk.red(msg))
       break;
   }
 }
 
-// serve up the dist dir
-app.use(express.static('dist'));
+async function createServer() {
+  const app = express();
+  const host = 'http://localhost';
+  const port = 3000;
 
-app.listen(port, () => {
-  Logger(`App listening on ${host}:${port}`, 0)
-});
+  const vite = await createViteServer({
+    server: { middlewareMode: true },
+    appType: 'custom'
+  })
+  // use vite's connect instance as middleware
+  app.use(vite.middlewares)
+
+  app.use('*', async (req, res) => {
+    try {
+      const url = req.originalUrl
+      const cookies = new Cookies(req.headers.cookie);
+      
+      if (url !== '/login') {
+        if (!cookies.get('access_token')) {
+          Logger(`It looks like you aren't logged into Twitch yet, please make sure to head to ${host}:${port}/login to complete the auth flow.`, 1)
+        }
+      }
+
+      let template, render
+      // always read fresh template in dev
+      template = fs.readFileSync(resolve('index.html'), 'utf-8')
+      template = await vite.transformIndexHtml(url, template)
+      render = (await vite.ssrLoadModule('/client/entry-server.js')).render
+
+      const [appHtml, preloadLinks] = await render(url, JSON.parse(
+        fs.readFileSync(resolve('dist/client/ssr-manifest.json'), 'utf-8'),
+      ))
+
+      const html = template
+        .replace(`<!--preload-links-->`, preloadLinks)
+        .replace(`<!--app-html-->`, appHtml)
+
+      res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
+    } catch (e) {
+      vite && vite.ssrFixStacktrace(e)
+      console.log(e.stack)
+      res.status(500).end(e.stack)
+    }
+  })
+  
+  app.listen(3000)
+
+  return { app, vite }
+}
+createServer()
 
 class TwitchBot {
   constructor(twitchNick) {
@@ -55,6 +104,7 @@ class TwitchBot {
       if (err) Logger(err, 1);
       else
       files.forEach(async (file) => {
+        if (file.split('.')[1].toLowerCase() !== 'mp3') return;
         let cmd = {};
         cmd.name = file.split('.')[0].toLowerCase()
         cmd.run = async () => {
@@ -68,8 +118,10 @@ class TwitchBot {
       
           child.on('exit', (code) => {
             if (code == 0) {
+              Logger(`successfully played ${file}`, 0)
               return;
             } else {
+              Logger(`error playing ${file}`, 1)
               return `There was an error playing that sound (common celery L).`
             }
           })
@@ -85,7 +137,7 @@ class TwitchBot {
       if (err) Logger(err, 1);
       else
       files.forEach(async (file) => {
-        let cmd = require(CommandsDir + '/' + file);
+        let cmd = (await import(CommandsDir + '/' + file)).default;
         if (!cmd.name || !cmd.description || !cmd.run)
         return Logger(
           'Unable to load command: ' + file.split('.')[0] + '. Reason: file is missing run / name / description properties.'
@@ -95,7 +147,8 @@ class TwitchBot {
       });
     });
   }
-  initialize() {
+  initialize = async () => {
+    Logger('initializing TwitchBot')
     this.loadSounds();
     this.loadCommands();
   }

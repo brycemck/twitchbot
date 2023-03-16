@@ -1,16 +1,24 @@
 <template>
   <main>
     <ChatWidget></ChatWidget>
-    <StreamAlerts></StreamAlerts>
+    <!-- <StreamAlerts></StreamAlerts> -->
   </main>
 </template>
 
 <script>
+import Cookies from 'universal-cookie';
+
 import ChatWidget from '../components/ChatWidget.vue'
 import StreamAlerts from '../components/StreamAlerts.vue'
 
 export default {
   name: 'Home',
+  setup() {
+    const cookies = new Cookies()
+    return {
+      cookies
+    }
+  },
   components: { ChatWidget, StreamAlerts },
   data() {
     return {
@@ -19,7 +27,7 @@ export default {
   },
   created: function() {
     // if no access_token cookie is present, redirect to login
-    if (!this.$cookies.get('access_token')) {
+    if (!this.cookies.get('access_token')) {
       this.$router.push('/login')
     }
   }

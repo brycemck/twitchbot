@@ -21,7 +21,7 @@ let quotes = [
     "Come on. Let's see some bananas and nuts. Oh, perhaps we should just pull their pants off."
 ]
 
-module.exports = {
+export default {
     name: 'hello',
     description: 'Say hello to Tobias, he\'ll have something fun to say.',
     usage: '',

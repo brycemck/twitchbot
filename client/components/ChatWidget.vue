@@ -60,6 +60,8 @@ p {
 </style>
 
 <script>
+import WebSocket from 'ws';
+
 export default {
   name: 'ChatWidget',
   data() {
@@ -497,7 +499,8 @@ export default {
     const that = this;
     
     // save access_token cookie
-    this.accessToken = this.$cookies.get('access_token')
+    // this.accessToken = this.$cookies.get('access_token')
+    this.accessToken = ''
 
     // BTTV fetch
     if (import.meta.env.VITE_BTTV_PROVIDER_ID) this.getBTTVEmotes(import.meta.env.VITE_BTTV_PROVIDER_ID);
