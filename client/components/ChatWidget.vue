@@ -60,8 +60,6 @@ p {
 </style>
 
 <script>
-import WebSocket from 'ws';
-
 export default {
   name: 'ChatWidget',
   data() {
@@ -472,11 +470,12 @@ export default {
             newMessage = newMessage.replaceAll(emote.code, `<img src='https://cdn.betterttv.net/emote/${emote.id}/1x' class='chat-emote' alt='${emote.code}' />`);
           });
 
-        if (newMessage === originalMessage) return;
-        
-        console.log('contained BTTV emote!')
-        message.parameters = newMessage;
-      });
+          if (newMessage === originalMessage) return;
+          
+          console.log('contained BTTV emote!')
+          message.parameters = newMessage;
+        });
+      }
 
       // 7TV checks
       if (import.meta.env.VITE_7TV_PROVIDER_ID) {
@@ -492,63 +491,31 @@ export default {
       // limit messages that can be displayed at once, remove the first message in the array of messages if at the limit
       if (this.messagesToDisplay.length == this.messageLimit) this.messagesToDisplay.shift();
       this.messagesToDisplay.push(message);
-    }
     },
+    handleWSOpen: () => {
+      console.log('bro is open no cap')
+    }
   },
   created: function() {
     const that = this;
-    
-    // save access_token cookie
-    // this.accessToken = this.$cookies.get('access_token')
-    this.accessToken = ''
 
     // BTTV fetch
     if (import.meta.env.VITE_BTTV_PROVIDER_ID) this.getBTTVEmotes(import.meta.env.VITE_BTTV_PROVIDER_ID);
     
     // 7TV fetch
     if (import.meta.env.VITE_7TV_USER_ID) this.getSevenTvEmoteSets(import.meta.env.VITE_7TV_USER_ID);
-
-    this.chatConnection = new WebSocket('ws://irc-ws.chat.twitch.tv:80')
-    this.chatConnection.onopen = function(event) {
-      console.log("Successfully connected to the echo websocket server...")
-
-      // request chat capabilities, provide password (oauth access token) and nickname for user logging into channel
-      that.sendMessage('CAP REQ : twitch.tv/tags twitch.tv/commands ')
-      that.sendMessage(`PASS oauth:${that.accessToken}`);
-      that.sendMessage(`NICK ${import.meta.env.VITE_TWITCH_NICK}`);
-    }
-    this.chatConnection.onmessage = function(event) {
-      // might be multiple twitch messages in one WS message, so separate them out and loop through
-      let messages = event.data.trimEnd().split('\r\n');
-      messages.forEach(message => {
-        let parsedMessage = that.parseMessage(message);
-        if(parsedMessage) {
-          // switch the different kinds of twitch IRC messages
-          switch (parsedMessage.command.command) {
-            case 'PRIVMSG': // message sent in channel
-              // send message to child ChatWidget
-              console.log(parsedMessage)
-              that.newMessage(parsedMessage);
-              break;
-            case 'PING': // send PONG response to PING to verify active connection
-              that.sendMessage('PONG ' + message.parameters);
-              break;
-            case '001': // IRC code for successful login
-              console.log('Login successful, joining channel.')
-              that.sendMessage(`JOIN #${import.meta.env.VITE_TWITCH_CHANNEL}`);
-              break;
-            case 'PART':
-              console.error('The channel must have banned the bot.');
-              this.chatConnection.close()
-              break;
-            default:
-              ;
-          }
-        }
-      })
-    }
   },
-  destroyed: function() {
+  mounted: function() {// mounted instead of created to make sure websocket is only initalized via dom
+    const that = this;
+    // if no access_token cookie is present, redirect to login
+    // if (!this.cookies.get('access_token')) {
+    //   this.$router.push('/login')
+    // }
+    const TwitchBotWS = new WebSocket('ws://localhost:6969');
+    TwitchBotWS.onopen = function (event) { that.handleWSOpen(); }
+    TwitchBotWS.onmessage = function (message) {that.newMessage(that.parseMessage(message.data)); }
+  },
+  destroyed: function() {         
 
   }
 }

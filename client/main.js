@@ -4,6 +4,7 @@ import App from './App.vue'
 import VueCookies from 'vue3-cookies'
 import { createSSRApp } from 'vue'
 import { createRouter } from './router'
+import './styles/base.scss';
 
 // import './assets/main.css'
 

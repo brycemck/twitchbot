@@ -1,4 +1,4 @@
-import WebSocket from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'url';
@@ -97,6 +97,11 @@ class TwitchBot {
     this.commandsPath = 'commands'
     this.ChatCommands = new Map()
     this.twitchNick = twitchNick;
+    this.wss = new WebSocketServer({ port: 6969 });
+    this.wss.on('connection', (ws) => {
+      Logger('client connected to web socket server', 0);
+      this.ws = ws;
+    })
   }
   loadSounds = () => {
     let SoundsDir = path.join(__dirname, '.', this.soundsPath);
@@ -153,12 +158,12 @@ class TwitchBot {
     this.loadCommands();
   }
 }
+
 // build methods that connect to websocket, listen to the channel we want and parse the websocket messages
 // extends TwitchBot with twitchNick and ChatCommands passed through
-
 class TwitchChatConnector extends TwitchBot {
-  constructor(twitchNick, ChatCommands) {
-    super(twitchNick, ChatCommands)
+  constructor(twitchNick, ChatCommands, ws) {
+    super(twitchNick, ChatCommands, ws)
     const that = this;
     this.ready = false;
     this.twitchWS = new WebSocket('ws://irc-ws.chat.twitch.tv:80');
@@ -179,6 +184,7 @@ class TwitchChatConnector extends TwitchBot {
         switch (parsedMessage.command.command) {
           case 'PRIVMSG': // message sent in channel
             this.handleChatMessage(parsedMessage)
+            this.passMessageToClient(message);
             break;
           case 'PING': // send PONG response to PING to verify active connection
             this.twitchWS.send('PONG ' + message.parameters);
@@ -466,7 +472,11 @@ class TwitchChatConnector extends TwitchBot {
   
     return parsedMessage;
   }
+  passMessageToClient = (message) => {
+    this.ws.send(message);
+  }
   handleChatMessage = (messageData) => {
+    // if message is a command
     if (messageData.parameters.startsWith('!')) {
       // Split commands and arguments from message so they can be passed to functions
       const args = messageData.parameters.slice(1).split(/ +/);

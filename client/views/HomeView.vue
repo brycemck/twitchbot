@@ -25,11 +25,7 @@ export default {
       messagesToDisplay: []
     }
   },
-  created: function() {
-    // if no access_token cookie is present, redirect to login
-    if (!this.cookies.get('access_token')) {
-      this.$router.push('/login')
-    }
+  methods: {
   }
 }
 </script>
